@@ -107,7 +107,7 @@ harbor run \
 | 评测场景 | 可行性 | 难度 | 说明 |
 |----------|--------|------|------|
 | Linux CLI Agent (Claude Code) | ✅ 完全可行 | 低 | 原生支持 |
-| Linux CLI Agent (Opencode) | ✅ 完全可行 | 低 | 需实现 Agent 适配器 |
+| Linux CLI Agent (Opencode) | ✅ 完全可行 | 低 | Harbor 已原生支持 |
 | Windows GUI (JetBrains IDE) | ⚠️ 需适配 | 中 | 通过统一 Bridge 层支持 |
 | Windows GUI (VS Code) | ⚠️ 需适配 | 中 | 通过统一 Bridge 层支持 |
 | Windows GUI (CodeArts Doer) | ⚠️ 需适配 | 中 | 通过统一 Bridge 层支持 |
@@ -182,56 +182,26 @@ harbor run \
   --n-concurrent 4
 ```
 
-### 3.2 Opencode（需适配）
+### 3.2 Opencode（已支持）
 
-需要实现 `BaseInstalledAgent` 或 `BaseAgent` 子类:
+Harbor 框架已原生支持 Opencode，可直接使用:
 
-```python
-# opencode_agent.py
-from harbor.agents import BaseInstalledAgent
-
-class OpencodeAgent(BaseInstalledAgent):
-    name = "opencode"
-
-    def __init__(self, model: str, **kwargs):
-        super().__init__(model=model, **kwargs)
-
-    def run(self, task_dir: str, **kwargs) -> dict:
-        """
-        在指定任务目录中运行 Opencode
-        """
-        import subprocess
-        import os
-
-        # 切换到任务目录
-        os.chdir(task_dir)
-
-        # 读取 instruction.md
-        with open("instruction.md") as f:
-            instruction = f.read()
-
-        # 启动 Opencode
-        result = subprocess.run(
-            ["opencode", "--prompt", instruction],
-            capture_output=True,
-            text=True,
-            timeout=self.time_limit
-        )
-
-        return {
-            "success": result.returncode == 0,
-            "output": result.stdout,
-            "error": result.stderr
-        }
+```bash
+# 运行 Opencode 评测
+harbor run \
+  --dataset terminal-bench@2.0 \
+  --agent opencode \
+  --model <model-endpoint> \
+  --n-concurrent 4
 ```
 
-**注册 Agent**:
-
-```python
-# 在 Harbor 中注册
-from harbor import register_agent
-register_agent("opencode", OpencodeAgent)
-```
+Harbor 支持的 CLI Agent 列表（持续更新）：
+- Claude Code
+- Codex CLI
+- Gemini CLI
+- OpenHands
+- Opencode
+- 其他 Agent 可通过 `BaseInstalledAgent` 或 `BaseAgent` 扩展
 
 ### 3.3 CLI Agent 通用适配模板
 
@@ -913,9 +883,9 @@ Phase 1: 基础建设（1周）
 ├── 熟悉 Harbor 框架
 └── 运行现有任务验证环境
 
-Phase 2: CLI Agent 适配（1周）
-├── 实现 Opencode 适配器
+Phase 2: CLI Agent 集成（1周）
 ├── 测试 Claude Code 集成
+├── 测试 Opencode 集成
 └── 编写自动化评测脚本
 
 Phase 3: GUI Agent 统一适配层（2周）
